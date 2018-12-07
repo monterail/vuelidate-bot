@@ -23,6 +23,7 @@ const STATUS_WARN = 'warning'
 const STATUS_PING = 'ping'
 
 const STATE_CLOSED = 'closed'
+const INACTIVITY_SPAN = process.env.INACTIVITY_SPAN || 10
 
 const MSG_MORE_INFO = "Thanks for opening this issue! However you did not provide description - it's essential for solving your problem, so please tell us more about it."
 const MSG_PING = "No recent activity, is this issue still relevant?"
@@ -46,7 +47,6 @@ module.exports = app => {
   router.get('/ping', async (req, res) => {
     const github = await app.auth(process.env.INSTALLATION_ID)
 
-    const timestamp = since(7).toISOString().replace(/\.\d{3}\w$/, '')
     const repoQuery = `{
       repository(owner: "monterail", name: "vuelidate") {
         issues(last: 100, states: [OPEN]) {
@@ -78,6 +78,7 @@ module.exports = app => {
         }
       }
     }`
+    const timestamp = since(INACTIVITY_SPAN)
 
     const gqlResult = await github.query(repoQuery)
     const relevantFilter = issue => !issue.labels.nodes.find(lb => lb.name === HOLD_LABEL) && (new Date(issue.updatedAt) < timestamp)
